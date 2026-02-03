@@ -2,174 +2,309 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Sports Sync - GitHub Optimized</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Sports Memory 2026</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
     <style>
-        :root { --bg: #0f172a; --card-bg: #1e293b; --accent: #38bdf8; --text: #f8fafc; --match: #10b981; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 15px; }
-        header { background: var(--card-bg); padding: 15px; border-radius: 12px; width: 100%; max-width: 550px; text-align: center; margin-bottom: 15px; border: 1px solid #334155; }
-        .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-        input, select { padding: 10px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: #fff; }
-        button { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-        #restartBtn { background: #ef4444; color: white; }
-        #shareBtn { background: var(--match); color: white; }
-        #syncBtn { background: #6366f1; color: white; }
-        button:active { transform: scale(0.95); }
-        .host-only { display: none; }
-        body.is-host .host-only { display: block; }
-        .grid { display: grid; gap: 10px; width: 100%; max-width: 600px; margin-top: 15px; }
-        .grid.easy { grid-template-columns: repeat(4, 1fr); }
-        .grid.medium { grid-template-columns: repeat(4, 1fr); }
-        .grid.hard { grid-template-columns: repeat(6, 1fr); }
-        .card { aspect-ratio: 1/1; perspective: 1000px; cursor: pointer; }
-        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
-        .card.flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; }
-        .card-front { background: var(--card-bg); font-size: 1.5rem; color: var(--accent); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .card-back { background: white; transform: rotateY(180deg); padding: 5px; }
-        .card-back img { width: 90%; height: 90%; object-fit: contain; }
-        .card.matched { cursor: default; opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-        #status { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.2); }
+        :root {
+            --primary-color: #013369;
+            --secondary-color: #ffffff;
+            --body-bg: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --app-width: 95%; 
+            --max-app-width: 600px;
+            --border-ui: #ccc;
+            --card-back: #013369;
+            --match-color: #2ecc71;
+            --accent-red: #e74c3c;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--body-bg); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+        .main-header { margin: 5px 0 10px 0; color: #013369; text-transform: uppercase; font-size: 1.5rem; text-align: center; }
+
+        .app-section { width: var(--app-width); max-width: var(--max-app-width); background: var(--card-bg); border-radius: 8px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px; border-top: 6px solid var(--primary-color); }
+
+        #player-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+        .player-entry { background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px; border: 1px solid var(--border-ui); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
+        .player-entry.active-turn { border: 2px solid #f39c12; background: #fffdf0; }
+        .score-pill { background: var(--primary-color); color: white; padding: 1px 6px; border-radius: 10px; font-weight: 900; font-size: 0.65rem; margin-top: 4px; }
+        .win-tally { font-size: 0.6rem; color: #e67e22; font-weight: bold; margin-top: 2px; }
+
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; background: var(--border-ui); padding: 6px; border-radius: 4px; }
+        .memory-card { aspect-ratio: 1 / 1.1; position: relative; cursor: pointer; transform-style: preserve-3d; transition: transform 0.4s; }
+        .memory-card.flipped { transform: rotateY(180deg); }
+        
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; padding: 4px; }
+        .card-front { background: var(--card-back); }
+        .card-front::after { content: "?"; color: white; font-weight: 900; font-size: 1.5rem; }
+
+        .card-back { background: white; transform: rotateY(180deg); }
+        .memory-card.matched .card-back { background-color: var(--match-color); border: 2px solid white; }
+        
+        .card-back .player-label { font-size: 0.45rem; font-weight: bold; color: #fff; background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 3px; margin-bottom: 2px; visibility: hidden; white-space: nowrap; overflow: hidden; max-width: 90%; }
+        .memory-card.matched .player-label { visibility: visible; }
+        .card-back img { width: 65%; height: 50%; object-fit: contain; }
+        .card-back .team-label { font-size: 0.5rem; font-weight: 900; text-align: center; line-height: 1.1; margin-top: 2px; text-transform: uppercase; word-break: break-word; }
+
+        #win-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; background: var(--primary-color); color: var(--secondary-color); padding: 20px; border-radius: 15px; text-align: center; z-index: 10000; border: 4px solid var(--secondary-color); }
+
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        select, input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-ui); font-size: 0.8rem; }
+        button { padding: 10px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; text-transform: uppercase; color: white; font-size: 0.65rem; }
+        .btn-blue { background: #3498db; }
+        .btn-green { background: #27ae60; }
+        .btn-orange { background: #f39c12; }
+        .btn-red { background: var(--accent-red); }
+        .btn-next { background: var(--secondary-color); color: var(--primary-color); width: 100%; margin-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
-<body id="mainBody">
+<body>
 
-<header>
-    <h2 style="margin:0">🏅 <span id="roleTitle">Peer</span></h2>
-    <div id="status">📡 Connecting to P2P Mesh...</div>
-    <div class="controls">
-        <div class="row">
-            <input type="text" id="playerName" placeholder="Player Name">
-            <div class="host-only">
-                <select id="diffSelect">
-                    <option value="8">Easy</option>
-                    <option value="12">Medium</option>
-                    <option value="18">Hard</option>
-                </select>
+    <h1 class="main-header">Sports Memory</h1>
+
+    <div id="win-modal">
+        <h1 id="win-title" style="font-size: 1.8rem; margin: 0;">GAME OVER!</h1>
+        <p id="winner-text" style="font-size: 1rem; margin: 10px 0;"></p>
+        <button id="host-reset-btn" class="btn-next" style="display:none;" onclick="hostReset()">Next Round</button>
+        <button onclick="document.getElementById('win-modal').style.display='none'" style="margin-top:10px; background:transparent; border:1px solid white; color:white; font-size:0.6rem;">Close</button>
+    </div>
+
+    <section class="app-section">
+        <input type="text" id="playerName" value="Player" onchange="updateMyName()" placeholder="Your Name">
+        
+        <div id="host-ui" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                <div>
+                    <label style="font-size:0.6rem; font-weight:bold;">LEAGUE:</label>
+                    <select id="league-select" onchange="hostReset()">
+                        <option value="all">All Sports</option>
+                        <option value="nfl">NFL Only</option>
+                        <option value="nba">NBA Only</option>
+                        <option value="mlb">MLB Only</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.6rem; font-weight:bold;">SIZE:</label>
+                    <select id="size-select" onchange="hostReset()">
+                        <option value="16">16 Cards</option>
+                        <option value="24">24 Cards</option>
+                        <option value="32">32 Cards</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="controls-grid">
+                <button class="btn-blue" onclick="copyInvite()" style="grid-column: span 2;">Copy Invite Link 🔗</button>
+                <button class="btn-green" onclick="hostReset()">Generate New Card 🔄</button>
+                <button class="btn-orange" onclick="createNewGameId()">New Game ID 🆔</button>
+                <button class="btn-red" onclick="resetLeaderboard()" style="grid-column: span 2;">Reset Leaderboard 🏆</button>
             </div>
         </div>
-        <div class="row">
-            <button id="shareBtn">Copy Link</button>
-            <button id="syncBtn">Refresh Sync</button>
-            <div class="host-only"><button id="restartBtn">Start Match</button></div>
-        </div>
+
+        <div id="player-list"></div>
+    </section>
+
+    <div class="app-section">
+        <div id="game-board" class="memory-grid"></div>
     </div>
-</header>
 
-<main id="gameBoard" class="grid"></main>
+    <script>
+        const nflTeams = [
+            { n: "Cardinals", i: "https://upload.wikimedia.org/wikipedia/en/7/72/Arizona_Cardinals_logo.svg" }, { n: "Falcons", i: "https://upload.wikimedia.org/wikipedia/en/c/c5/Atlanta_Falcons_logo.svg" },
+            { n: "Ravens", i: "https://upload.wikimedia.org/wikipedia/en/1/16/Baltimore_Ravens_logo.svg" }, { n: "Bills", i: "https://upload.wikimedia.org/wikipedia/en/7/77/Buffalo_Bills_logo.svg" },
+            { n: "Panthers", i: "https://upload.wikimedia.org/wikipedia/en/1/1c/Carolina_Panthers_logo.svg" }, { n: "Bears", i: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Chicago_Bears_logo.svg" },
+            { n: "Bengals", i: "https://upload.wikimedia.org/wikipedia/commons/8/81/Cincinnati_Bengals_logo.svg" }, { n: "Browns", i: "https://upload.wikimedia.org/wikipedia/en/d/d9/Cleveland_Browns_logo.svg" },
+            { n: "Cowboys", i: "https://upload.wikimedia.org/wikipedia/commons/1/15/Dallas_Cowboys.svg" }, { n: "Broncos", i: "https://upload.wikimedia.org/wikipedia/en/4/44/Denver_Broncos_logo.svg" },
+            { n: "Lions", i: "https://upload.wikimedia.org/wikipedia/en/7/71/Detroit_Lions_logo.svg" }, { n: "Packers", i: "https://upload.wikimedia.org/wikipedia/commons/5/50/Green_Bay_Packers_logo.svg" },
+            { n: "Texans", i: "https://upload.wikimedia.org/wikipedia/en/2/28/Houston_Texans_logo.svg" }, { n: "Colts", i: "https://upload.wikimedia.org/wikipedia/commons/0/00/Indianapolis_Colts_logo.svg" },
+            { n: "Jaguars", i: "https://upload.wikimedia.org/wikipedia/en/7/74/Jacksonville_Jaguars_logo.svg" }, { n: "Chiefs", i: "https://upload.wikimedia.org/wikipedia/en/e/e1/Kansas_City_Chiefs_logo.svg" },
+            { n: "Raiders", i: "https://upload.wikimedia.org/wikipedia/en/4/48/Las_Vegas_Raiders_logo.svg" }, { n: "Chargers", i: "https://upload.wikimedia.org/wikipedia/en/7/72/NFL_Chargers_logo.svg" },
+            { n: "Rams", i: "https://upload.wikimedia.org/wikipedia/en/8/8a/Los_Angeles_Rams_logo.svg" }, { n: "Dolphins", i: "https://upload.wikimedia.org/wikipedia/en/3/37/Miami_Dolphins_logo.svg" },
+            { n: "Vikings", i: "https://upload.wikimedia.org/wikipedia/en/4/48/Minnesota_Vikings_logo.svg" }, { n: "Patriots", i: "https://upload.wikimedia.org/wikipedia/en/b/b9/New_England_Patriots_logo.svg" },
+            { n: "Saints", i: "https://upload.wikimedia.org/wikipedia/commons/5/50/New_Orleans_Saints_logo.svg" }, { n: "Giants", i: "https://upload.wikimedia.org/wikipedia/commons/6/60/New_York_Giants_logo.svg" },
+            { n: "Jets", i: "https://upload.wikimedia.org/wikipedia/en/6/6b/New_York_Jets_logo.svg" }, { n: "Eagles", i: "https://upload.wikimedia.org/wikipedia/en/8/8e/Philadelphia_Eagles_logo.svg" },
+            { n: "Steelers", i: "https://upload.wikimedia.org/wikipedia/commons/d/de/Pittsburgh_Steelers_logo.svg" }, { n: "49ers", i: "https://upload.wikimedia.org/wikipedia/commons/3/3a/San_Francisco_49ers_logo.svg" },
+            { n: "Seahawks", i: "https://upload.wikimedia.org/wikipedia/en/8/8e/Seattle_Seahawks_logo.svg" }, { n: "Buccaneers", i: "https://upload.wikimedia.org/wikipedia/en/a/a2/Tampa_Bay_Buccaneers_logo.svg" },
+            { n: "Titans", i: "https://upload.wikimedia.org/wikipedia/en/c/c1/Tennessee_Titans_logo.svg" }, { n: "Commanders", i: "https://upload.wikimedia.org/wikipedia/commons/0/0c/Washington_Commanders_logo.svg" }
+        ];
 
-<script>
-    // USES SECURE RELAYS ONLY (Required for GitHub Pages/HTTPS)
-    const gun = Gun({
-        peers: [
-            'https://gun-manhattan.herokuapp.com/gun',
-            'https://peer.wall.org/gun',
-            'https://gun-server.herokuapp.com/gun'
-        ]
-    });
+        const nbaTeams = [
+            { n: "Hawks", i: "https://upload.wikimedia.org/wikipedia/en/2/24/Atlanta_Hawks_logo.svg" }, { n: "Celtics", i: "https://upload.wikimedia.org/wikipedia/en/8/8f/Boston_Celtics.svg" }, { n: "Nets", i: "https://upload.wikimedia.org/wikipedia/en/4/44/Brooklyn_Nets_logo.svg" }, { n: "Hornets", i: "https://upload.wikimedia.org/wikipedia/en/c/c4/Charlotte_Hornets_%282014%29_logo.svg" }, { n: "Bulls", i: "https://upload.wikimedia.org/wikipedia/en/6/67/Chicago_Bulls_logo.svg" }, { n: "Cavaliers", i: "https://upload.wikimedia.org/wikipedia/commons/4/4b/Cleveland_Cavaliers_logo.svg" }, { n: "Mavericks", i: "https://upload.wikimedia.org/wikipedia/en/9/97/Dallas_Mavericks_logo.svg" }, { n: "Nuggets", i: "https://upload.wikimedia.org/wikipedia/en/7/76/Denver_Nuggets.svg" }, { n: "Pistons", i: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Detroit_Pistons_logo17.svg" }, { n: "Warriors", i: "https://upload.wikimedia.org/wikipedia/en/0/01/Golden_State_Warriors_logo.svg" }, { n: "Rockets", i: "https://upload.wikimedia.org/wikipedia/en/2/28/Houston_Rockets.svg" }, { n: "Pacers", i: "https://upload.wikimedia.org/wikipedia/en/1/1b/Indiana_Pacers.svg" }, { n: "Clippers", i: "https://upload.wikimedia.org/wikipedia/en/b/bb/Los_Angeles_Clippers_%282024%29.svg" }, { n: "Lakers", i: "https://upload.wikimedia.org/wikipedia/commons/3/3c/Los_Angeles_Lakers_logo.svg" }, { n: "Grizzlies", i: "https://upload.wikimedia.org/wikipedia/en/f/f1/Memphis_Grizzlies.svg" }, { n: "Heat", i: "https://upload.wikimedia.org/wikipedia/en/f/fb/Miami_Heat_logo.svg" }, { n: "Bucks", i: "https://upload.wikimedia.org/wikipedia/en/4/4a/Milwaukee_Bucks_logo.svg" }, { n: "Timberwolves", i: "https://upload.wikimedia.org/wikipedia/en/c/c2/Minnesota_Timberwolves_logo.svg" }, { n: "Pelicans", i: "https://upload.wikimedia.org/wikipedia/en/0/0d/New_Orleans_Pelicans_logo.svg" }, { n: "Knicks", i: "https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg" }, { n: "Thunder", i: "https://upload.wikimedia.org/wikipedia/en/5/5d/Oklahoma_City_Thunder.svg" }, { n: "Magic", i: "https://upload.wikimedia.org/wikipedia/en/1/10/Orlando_Magic_logo.svg" }, { n: "76ers", i: "https://upload.wikimedia.org/wikipedia/en/0/0e/Philadelphia_76ers_logo.svg" }, { n: "Suns", i: "https://upload.wikimedia.org/wikipedia/en/d/dc/Phoenix_Suns_logo.svg" }, { n: "Blazers", i: "https://upload.wikimedia.org/wikipedia/en/2/21/Portland_Trail_Blazers_logo.svg" }, { n: "Kings", i: "https://upload.wikimedia.org/wikipedia/en/c/c7/Sacramento_Kings_logo.svg" }, { n: "Spurs", i: "https://upload.wikimedia.org/wikipedia/en/a/a2/San_Antonio_Spurs_logo.svg" }, { n: "Raptors", i: "https://upload.wikimedia.org/wikipedia/en/3/36/Toronto_Raptors_logo.svg" }, { n: "Jazz", i: "https://upload.wikimedia.org/wikipedia/en/c/c2/Utah_Jazz_logo_%282022%29.svg" }, { n: "Wizards", i: "https://upload.wikimedia.org/wikipedia/en/0/02/Washington_Wizards_logo.svg" }
+        ];
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const isHost = !urlParams.get('session');
-    let sessionId = urlParams.get('session') || Math.random().toString(36).substring(7);
-    
-    // Auto-update URL for host
-    if (isHost) {
-        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?session=' + sessionId;
-        window.history.replaceState({path:newUrl}, '', newUrl);
-        document.body.classList.add('is-host');
-        document.getElementById('roleTitle').innerText = "Match Host";
-    }
+        const mlbTeams = [
+            { n: "Diamondbacks", i: "https://upload.wikimedia.org/wikipedia/en/8/89/Arizona_Diamondbacks_logo.svg" }, { n: "Braves", i: "https://upload.wikimedia.org/wikipedia/en/f/f2/Atlanta_Braves_logo.svg" }, { n: "Orioles", i: "https://upload.wikimedia.org/wikipedia/en/a/a1/Baltimore_Orioles_logo.svg" }, { n: "Red Sox", i: "https://upload.wikimedia.org/wikipedia/en/6/6d/Red_Sox_logo_primary.svg" }, { n: "Cubs", i: "https://upload.wikimedia.org/wikipedia/en/8/80/Chicago_Cubs_logo.svg" }, { n: "White Sox", i: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Chicago_White_Sox.svg" }, { n: "Reds", i: "https://upload.wikimedia.org/wikipedia/commons/0/01/Cincinnati_Reds_Logo.svg" }, { n: "Guardians", i: "https://upload.wikimedia.org/wikipedia/en/a/a9/Cleveland_Guardians_logo.svg" }, { n: "Rockies", i: "https://upload.wikimedia.org/wikipedia/commons/3/31/Colorado_Rockies_logo.svg" }, { n: "Tigers", i: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Detroit_Tigers_logo.svg" }, { n: "Astros", i: "https://upload.wikimedia.org/wikipedia/en/6/6b/Houston_Astros_logo.svg" }, { n: "Royals", i: "https://upload.wikimedia.org/wikipedia/en/1/1c/Kansas_City_Royals.svg" }, { n: "Angels", i: "https://upload.wikimedia.org/wikipedia/commons/8/8b/Los_Angeles_Angels_of_Anaheim.svg" }, { n: "Dodgers", i: "https://upload.wikimedia.org/wikipedia/en/6/67/Los_Angeles_Dodgers_logo.svg" }, { n: "Marlins", i: "https://upload.wikimedia.org/wikipedia/en/f/fd/Miami_Marlins_logo.svg" }, { n: "Brewers", i: "https://upload.wikimedia.org/wikipedia/en/b/b8/Milwaukee_Brewers_logo.svg" }, { n: "Twins", i: "https://upload.wikimedia.org/wikipedia/en/7/71/Minnesota_Twins_logo.svg" }, { n: "Mets", i: "https://upload.wikimedia.org/wikipedia/en/7/7b/New_York_Mets.svg" }, { n: "Yankees", i: "https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Yankees_logo.svg" }, { n: "Athletics", i: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Oakland_A%27s_logo.svg" }, { n: "Phillies", i: "https://upload.wikimedia.org/wikipedia/en/a/ad/Philadelphia_Phillies_logo.svg" }, { n: "Pirates", i: "https://upload.wikimedia.org/wikipedia/commons/8/81/Pittsburgh_Pirates_logo_2014.svg" }, { n: "Padres", i: "https://upload.wikimedia.org/wikipedia/commons/a/aa/San_Diego_Padres_logo_2020.svg" }, { n: "Giants", i: "https://upload.wikimedia.org/wikipedia/en/5/54/San_Francisco_Giants_Logo.svg" }, { n: "Mariners", i: "https://upload.wikimedia.org/wikipedia/en/6/6d/Seattle_Mariners_logo.svg" }, { n: "Cardinals", i: "https://upload.wikimedia.org/wikipedia/en/9/9d/St._Louis_Cardinals_logo.svg" }, { n: "Rays", i: "https://upload.wikimedia.org/wikipedia/en/c/c6/Tampa_Bay_Rays.svg" }, { n: "Rangers", i: "https://upload.wikimedia.org/wikipedia/en/0/04/Texas_Rangers_Logo.svg" }, { n: "Blue Jays", i: "https://upload.wikimedia.org/wikipedia/en/b/ba/Toronto_Blue_Jays_logo.svg" }, { n: "Nationals", i: "https://upload.wikimedia.org/wikipedia/en/a/a3/Washington_Nationals_logo.svg" }
+        ];
 
-    // UNIQUE DATA PATH
-    const room = gun.get('nfl-mlb-nba-v5').get(sessionId);
-    const boardEl = document.getElementById('gameBoard');
-    let localCards = [];
+        let peer, connections = {}, isHost = false, gameID = null;
+        let gameState = { cards: [], players: {}, playerOrder: [], turnIndex: 0, flippedIndices: [], isProcessing: false };
 
-    // DATA LISTENER
-    room.get('board_data').on((data) => {
-        if (data) {
-            localCards = JSON.parse(data);
-            updateGridClass(localCards.length);
-            render();
-            document.getElementById('status').innerText = "✅ ACTIVE SYNC (" + localCards.filter(c=>c.matched).length + " matched)";
-            document.getElementById('status').style.color = "#10b981";
+        window.onload = () => { const urlParams = new URLSearchParams(window.location.search); initPeer(urlParams.get('game')); };
+
+        function initPeer(id) {
+            if (peer) peer.destroy();
+            peer = new Peer();
+            peer.on('open', (myId) => {
+                gameID = id || myId;
+                if (!id) {
+                    isHost = true;
+                    document.getElementById('host-ui').style.display = 'block';
+                    if (!gameState.players[peer.id]) {
+                        gameState.players[peer.id] = { name: document.getElementById('playerName').value, score: 0, totalWins: 0 };
+                        gameState.playerOrder = [peer.id];
+                    }
+                    setupNewGame();
+                } else { connectToHost(id); }
+            });
+            peer.on('connection', setupConn);
         }
-    });
 
-    const allTeams = [
-        {id: "ari", l:"nfl"}, {id: "atl", l:"nfl"}, {id: "bal", l:"nfl"}, {id: "buf", l:"nfl"}, {id: "chi", l:"nfl"}, {id: "dal", l:"nfl"}, {id: "kc", l:"nfl"}, {id: "phi", l:"nfl"},
-        {id: "lal", l:"nba"}, {id: "bos", l:"nba"}, {id: "gs", l:"nba"}, {id: "ny", l:"nba"}, {id: "phi", l:"nba"}, {id: "phx", l:"nba"}, {id: "mil", l:"nba"}, {id: "mia", l:"nba"},
-        {id: "nyy", l:"mlb"}, {id: "lad", l:"mlb"}, {id: "bos", l:"mlb"}, {id: "chc", l:"mlb"}, {id: "sf", l:"mlb"}, {id: "atl", l:"mlb"}, {id: "hou", l:"mlb"}, {id: "tor", l:"mlb"}
-    ];
+        function setupConn(conn) {
+            conn.on('open', () => {
+                connections[conn.peer] = conn;
+                if (isHost) {
+                    if (!gameState.players[conn.peer]) {
+                        gameState.players[conn.peer] = { name: "Player", score: 0, totalWins: 0 };
+                        gameState.playerOrder.push(conn.peer);
+                    }
+                    broadcastState();
+                }
+            });
+            conn.on('data', (data) => {
+                if (data.type === 'state_update') {
+                    gameState = data.state;
+                    renderBoard(); updatePlayerList();
+                    if (data.showWin) triggerWinPopup(data.winnerName, data.isDraw);
+                    if (data.hideWin) document.getElementById('win-modal').style.display = 'none';
+                }
+                if (isHost) {
+                    if (data.type === 'flip') handleFlip(data.index, conn.peer);
+                    if (data.type === 'name_update') { gameState.players[conn.peer].name = data.name; broadcastState(); }
+                }
+            });
+        }
 
-    function generateBoard(count) {
-        const shuffled = [...allTeams].sort(() => 0.5 - Math.random()).slice(0, count);
-        const board = [...shuffled, ...shuffled]
-            .sort(() => 0.5 - Math.random())
-            .map((t, i) => ({ ...t, index: i, flipped: false, matched: false }));
-        room.get('board_data').put(JSON.stringify(board));
-    }
+        function connectToHost(id) { const conn = peer.connect(id); setupConn(conn); }
 
-    function render() {
-        boardEl.innerHTML = '';
-        localCards.forEach((card, i) => {
-            const cardDiv = document.createElement('div');
-            cardDiv.className = `card ${card.flipped ? 'flipped' : ''} ${card.matched ? 'matched' : ''}`;
-            const logo = `https://a.espncdn.com/i/teamlogos/${card.l}/500/scoreboard/${card.id}.png`;
-            cardDiv.innerHTML = `<div class="card-inner"><div class="card-front">?</div><div class="card-back"><img src="${logo}"></div></div>`;
-            cardDiv.onclick = () => handleMove(i);
-            boardEl.appendChild(cardDiv);
-        });
-    }
+        function setupNewGame() {
+            const league = document.getElementById('league-select').value;
+            const count = parseInt(document.getElementById('size-select').value);
+            let pool = (league === 'nfl') ? nflTeams : (league === 'nba') ? nbaTeams : (league === 'mlb') ? mlbTeams : [...nflTeams, ...nbaTeams, ...mlbTeams];
 
-    function handleMove(i) {
-        if (localCards[i].flipped || localCards[i].matched) return;
-        const active = localCards.filter(c => c.flipped && !c.matched);
-        if (active.length >= 2) return;
+            let picked = shuffle([...pool]).slice(0, count / 2);
+            let gameIcons = shuffle([...picked, ...picked]);
+            gameState.cards = gameIcons.map(t => ({ id: t.n + t.i, n: t.n, i: t.i, flipped: false, matched: false, matchedBy: '' }));
+            gameState.flippedIndices = [];
+            gameState.isProcessing = false;
+            Object.keys(gameState.players).forEach(id => gameState.players[id].score = 0);
+            
+            broadcastState({ hideWin: true });
+        }
 
-        localCards[i].flipped = true;
-        sync();
+        function handleFlip(index, peerId) {
+            if (gameState.isProcessing || gameState.playerOrder[gameState.turnIndex] !== peerId) return;
+            if (gameState.cards[index].flipped || gameState.cards[index].matched) return;
+            gameState.cards[index].flipped = true;
+            gameState.flippedIndices.push(index);
+            broadcastState();
 
-        const flipped = localCards.filter(c => c.flipped && !c.matched);
-        if (flipped.length === 2) {
-            const [c1, c2] = flipped;
-            if (c1.id === c2.id && c1.l === c2.l) {
-                setTimeout(() => { localCards[c1.index].matched = true; localCards[c2.index].matched = true; sync(); }, 500);
-            } else {
-                setTimeout(() => { localCards[c1.index].flipped = false; localCards[c2.index].flipped = false; sync(); }, 1200);
+            if (gameState.flippedIndices.length === 2) {
+                gameState.isProcessing = true;
+                const [idx1, idx2] = gameState.flippedIndices;
+                if (gameState.cards[idx1].id === gameState.cards[idx2].id) {
+                    setTimeout(() => {
+                        const matcher = gameState.players[peerId];
+                        gameState.cards[idx1].matched = true;
+                        gameState.cards[idx1].matchedBy = matcher.name;
+                        gameState.cards[idx2].matched = true;
+                        gameState.cards[idx2].matchedBy = matcher.name;
+                        matcher.score += 1;
+                        gameState.flippedIndices = [];
+                        gameState.isProcessing = false;
+                        
+                        if (gameState.cards.every(c => c.matched)) {
+                            const sorted = Object.values(gameState.players).sort((a,b) => b.score - a.score);
+                            const isDraw = sorted.length > 1 && sorted[0].score === sorted[1].score;
+                            if (!isDraw) {
+                                const winnerId = Object.keys(gameState.players).find(k => gameState.players[k].name === sorted[0].name);
+                                gameState.players[winnerId].totalWins += 1;
+                            }
+                            broadcastState({ showWin: true, winnerName: sorted[0].name, isDraw: isDraw });
+                        } else { broadcastState(); }
+                    }, 600);
+                } else {
+                    setTimeout(() => {
+                        gameState.cards[idx1].flipped = false;
+                        gameState.cards[idx2].flipped = false;
+                        gameState.flippedIndices = [];
+                        gameState.turnIndex = (gameState.turnIndex + 1) % gameState.playerOrder.length;
+                        gameState.isProcessing = false;
+                        broadcastState();
+                    }, 1200);
+                }
             }
         }
-    }
 
-    function sync() { room.get('board_data').put(JSON.stringify(localCards)); }
+        function broadcastState(extra = {}) {
+            const payload = { type: 'state_update', state: gameState, ...extra };
+            Object.values(connections).forEach(c => { if (c.open) c.send(payload); });
+            renderBoard(); updatePlayerList();
+            if (extra.showWin) triggerWinPopup(extra.winnerName, extra.isDraw);
+            if (extra.hideWin) document.getElementById('win-modal').style.display = 'none';
+        }
 
-    function updateGridClass(size) {
-        boardEl.className = "grid";
-        if (size <= 16) boardEl.classList.add('easy');
-        else if (size <= 24) boardEl.classList.add('medium');
-        else boardEl.classList.add('hard');
-    }
+        function renderBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+            gameState.cards.forEach((card, index) => {
+                const div = document.createElement('div');
+                div.className = `memory-card ${card.flipped || card.matched ? 'flipped' : ''} ${card.matched ? 'matched' : ''}`;
+                div.innerHTML = `<div class="card-face card-front"></div><div class="card-face card-back"><div class="player-label">${card.matchedBy}</div><img src="${card.i}"><div class="team-label">${card.n}</div></div>`;
+                div.onclick = () => {
+                    if (isHost) handleFlip(index, peer.id);
+                    else { const hostConn = Object.values(connections)[0]; if (hostConn) hostConn.send({ type: 'flip', index: index }); }
+                };
+                board.appendChild(div);
+            });
+        }
 
-    document.getElementById('shareBtn').onclick = () => {
-        navigator.clipboard.writeText(window.location.href);
-        alert("Link Copied! Ensure your friend opens this EXACT URL.");
-    };
+        function updatePlayerList() {
+            const list = document.getElementById('player-list');
+            const activeId = gameState.playerOrder[gameState.turnIndex];
+            list.innerHTML = gameState.playerOrder.map(id => {
+                const p = gameState.players[id];
+                return `<div class="player-entry ${id === activeId ? 'active-turn' : ''}">
+                    <strong style="font-size:0.7rem;">${p.name}</strong>
+                    <span class="score-pill">${p.score} Pairs</span>
+                    <span class="win-tally">Season Wins: ${p.totalWins || 0}</span>
+                </div>`;
+            }).join('');
+        }
 
-    document.getElementById('syncBtn').onclick = () => {
-        document.getElementById('status').innerText = "🔄 Pulling latest data...";
-        room.get('board_data').once((data) => {
-            if(data) { localCards = JSON.parse(data); render(); }
-            else { alert("No board found. Wait for host to start."); }
-        });
-    };
+        function triggerWinPopup(name, isDraw) {
+            const title = document.getElementById('win-title');
+            const text = document.getElementById('winner-text');
+            if (isDraw) { title.innerText = "IT'S A DRAW!"; text.innerText = "No Season Win awarded."; } 
+            else { title.innerText = "WINNER!"; text.innerText = `${name.toUpperCase()} earns a Season Win!`; confetti({ particleCount: 150, spread: 60 }); }
+            document.getElementById('win-modal').style.display = 'block';
+            document.getElementById('host-reset-btn').style.display = isHost ? 'inline-block' : 'none';
+        }
 
-    if (isHost) {
-        document.getElementById('restartBtn').onclick = () => {
-            generateBoard(parseInt(document.getElementById('diffSelect').value));
-        };
-    }
-</script>
+        function createNewGameId() { if(confirm("This will disconnect current players. Generate new ID?")) { window.location.href = window.location.origin + window.location.pathname; } }
+        function resetLeaderboard() { if(isHost && confirm("Clear all Season Wins?")) { Object.keys(gameState.players).forEach(id => gameState.players[id].totalWins = 0); broadcastState(); } }
+        function hostReset() { if(isHost) setupNewGame(); }
+        function updateMyName() {
+            const name = document.getElementById('playerName').value;
+            if (isHost) { gameState.players[peer.id].name = name; broadcastState(); }
+            else { const hostConn = Object.values(connections)[0]; if (hostConn) hostConn.send({ type: 'name_update', name }); }
+        }
+        function copyInvite() { const url = `${window.location.origin}${window.location.pathname}?game=${gameID}`; navigator.clipboard.writeText(url).then(() => alert("Link Copied!")); }
+        function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    </script>
 </body>
 </html>
