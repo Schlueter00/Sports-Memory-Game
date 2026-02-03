@@ -3,45 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Sports Sync Match</title>
+    <title>Pro Sports Sync - Multiplayer</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <style>
         :root { --bg: #0f172a; --card-bg: #1e293b; --accent: #38bdf8; --text: #f8fafc; --match: #10b981; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 15px; }
-        header { background: var(--card-bg); padding: 20px; border-radius: 12px; width: 100%; max-width: 500px; text-align: center; margin-bottom: 15px; border: 1px solid #334155; }
-        .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        input { padding: 12px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: #fff; text-align: center; font-size: 1rem; }
-        .btn-group { display: flex; gap: 10px; justify-content: center; }
-        button { flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        header { background: var(--card-bg); padding: 15px; border-radius: 12px; width: 100%; max-width: 600px; text-align: center; margin-bottom: 15px; border: 1px solid #334155; }
+        
+        .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        
+        input, select { padding: 10px; border-radius: 6px; border: 1px solid var(--accent); background: #000; color: #fff; font-size: 0.9rem; }
+        button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
         #restartBtn { background: #ef4444; color: white; }
         #shareBtn { background: var(--match); color: white; }
         button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 500px; margin-top: 10px; }
+
+        /* Grid Scales based on difficulty */
+        .grid { display: grid; gap: 8px; width: 100%; max-width: 600px; margin-top: 15px; }
+        .grid.easy { grid-template-columns: repeat(4, 1fr); }
+        .grid.medium { grid-template-columns: repeat(4, 1fr); }
+        .grid.hard { grid-template-columns: repeat(6, 1fr); }
+
         .card { aspect-ratio: 1/1; perspective: 1000px; cursor: pointer; }
-        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
         .card.flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 10px; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; }
-        .card-front { background: var(--card-bg); font-size: 1.8rem; color: var(--accent); box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.2); }
-        .card-back { background: white; transform: rotateY(180deg); padding: 8px; }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; }
+        .card-front { background: var(--card-bg); font-size: 1.2rem; color: var(--accent); }
+        .card-back { background: white; transform: rotateY(180deg); padding: 5px; }
         .card-back img { width: 90%; height: 90%; object-fit: contain; }
-        .card.matched { cursor: default; }
-        .card.matched .card-back { border-color: var(--match); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
-        #status { font-size: 0.85rem; color: #94a3b8; margin-top: 10px; }
+        
+        .card.matched { cursor: default; opacity: 0.8; }
+        .card.matched .card-back { border: 3px solid var(--match); }
+        
+        #status { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2 style="margin:0">🏆 Shared Memory</h2>
-    <div id="status">Waiting for board data...</div>
+    <h2 style="margin:0">🏆 Shared Pro Memory</h2>
+    <div id="status">Connecting...</div>
     <div class="controls">
-        <input type="text" id="playerName" placeholder="Enter Your Name">
-        <div class="btn-group">
-            <button id="shareBtn">Copy Link</button>
-            <button id="restartBtn">Reset All</button>
+        <div class="row">
+            <input type="text" id="playerName" placeholder="Your Name">
+            <select id="diffSelect">
+                <option value="8">Easy (4x4)</option>
+                <option value="12">Medium (6x4)</option>
+                <option value="18">Hard (6x6)</option>
+            </select>
+        </div>
+        <div class="row">
+            <button id="shareBtn">Copy Invite Link</button>
+            <button id="restartBtn">New Game / Sync</button>
         </div>
     </div>
-    <div style="margin-top:10px; font-size: 0.8rem; opacity: 0.7;">Room ID: <span id="sessionDisplay"></span></div>
 </header>
 
 <main id="gameBoard" class="grid"></main>
@@ -52,34 +68,32 @@
     let sessionId = urlParams.get('session') || Math.random().toString(36).substring(7);
     if (!urlParams.get('session')) window.history.replaceState({}, '', `?session=${sessionId}`);
     
-    document.getElementById('sessionDisplay').innerText = sessionId;
-    const room = gun.get('nfl-nba-mlb-sync-' + sessionId);
+    const room = gun.get('sports-mem-v3-' + sessionId);
+    const boardEl = document.getElementById('gameBoard');
 
-    // Full Team List (ID matches ESPN CDN)
-    const teams = [
-        {id: "ari", l:"nfl"}, {id: "atl", l:"nfl"}, {id: "bal", l:"nfl"}, {id: "buf", l:"nfl"},
-        {id: "lal", l:"nba"}, {id: "bos", l:"nba"}, {id: "chi", l:"nba"}, {id: "gs", l:"nba"},
-        {id: "nyy", l:"mlb"}, {id: "lad", l:"mlb"}, {id: "bos", l:"mlb"}, {id: "chc", l:"mlb"}
+    const allTeams = [
+        {id: "ari", l:"nfl"}, {id: "atl", l:"nfl"}, {id: "bal", l:"nfl"}, {id: "buf", l:"nfl"}, {id: "car", l:"nfl"}, {id: "chi", l:"nfl"}, {id: "cin", l:"nfl"}, {id: "cle", l:"nfl"},
+        {id: "lal", l:"nba"}, {id: "bos", l:"nba"}, {id: "chi", l:"nba"}, {id: "gs", l:"nba"}, {id: "mia", l:"nba"}, {id: "ny", l:"nba"}, {id: "phi", l:"nba"}, {id: "phx", l:"nba"},
+        {id: "nyy", l:"mlb"}, {id: "lad", l:"mlb"}, {id: "bos", l:"mlb"}, {id: "chc", l:"mlb"}, {id: "sf", l:"mlb"}, {id: "stl", l:"mlb"}, {id: "tex", l:"mlb"}, {id: "tor", l:"mlb"}
     ];
 
     let localCards = [];
 
-    // 1. Listen for the Board
+    // Sync from Database
     room.get('board').on((data) => {
         if (data) {
             localCards = JSON.parse(data);
+            updateGridClass(localCards.length);
             render();
-            document.getElementById('status').innerText = "✅ Board Synced";
+            document.getElementById('status').innerText = "✅ Live Sync Active";
         } else {
-            // If no board exists, create one (acts as host)
-            generateBoard();
+            generateBoard(8); // Default
         }
     });
 
-    function generateBoard() {
-        document.getElementById('status').innerText = "🛠 Generating Shared Board...";
-        // Pick 8 random pairs
-        const shuffled = [...teams].sort(() => 0.5 - Math.random()).slice(0, 8);
+    function generateBoard(count) {
+        document.getElementById('status').innerText = "🛠 Creating New Board...";
+        const shuffled = [...allTeams].sort(() => 0.5 - Math.random()).slice(0, count);
         const board = [...shuffled, ...shuffled]
             .sort(() => 0.5 - Math.random())
             .map((t, i) => ({ ...t, index: i, flipped: false, matched: false }));
@@ -87,8 +101,14 @@
         room.get('board').put(JSON.stringify(board));
     }
 
+    function updateGridClass(size) {
+        boardEl.className = "grid";
+        if (size <= 16) boardEl.classList.add('easy');
+        else if (size <= 24) boardEl.classList.add('medium');
+        else boardEl.classList.add('hard');
+    }
+
     function render() {
-        const boardEl = document.getElementById('gameBoard');
         boardEl.innerHTML = '';
         localCards.forEach((card, i) => {
             const cardDiv = document.createElement('div');
@@ -108,48 +128,42 @@
 
     function handleMove(i) {
         if (localCards[i].flipped || localCards[i].matched) return;
-
         const active = localCards.filter(c => c.flipped && !c.matched);
         if (active.length >= 2) return;
 
-        // Flip locally & Sync
         localCards[i].flipped = true;
-        updateRemote();
+        sync();
 
         const currentlyFlipped = localCards.filter(c => c.flipped && !c.matched);
         if (currentlyFlipped.length === 2) {
             const [c1, c2] = currentlyFlipped;
             if (c1.id === c2.id && c1.l === c2.l) {
-                // Match!
                 setTimeout(() => {
                     localCards[c1.index].matched = true;
                     localCards[c2.index].matched = true;
-                    updateRemote();
-                }, 500);
+                    sync();
+                }, 400);
             } else {
-                // Not a match - let everyone see for 1.5s
                 setTimeout(() => {
                     localCards[c1.index].flipped = false;
                     localCards[c2.index].flipped = false;
-                    updateRemote();
-                }, 1500);
+                    sync();
+                }, 1200);
             }
         }
     }
 
-    function updateRemote() {
-        room.get('board').put(JSON.stringify(localCards));
-    }
+    function sync() { room.get('board').put(JSON.stringify(localCards)); }
 
     document.getElementById('shareBtn').onclick = () => {
         navigator.clipboard.writeText(window.location.href);
-        alert("Invite Link Copied!");
+        alert("Link Copied! Send to friend.");
     };
 
     document.getElementById('restartBtn').onclick = () => {
-        if(confirm("This will reset the board for ALL players. Continue?")) generateBoard();
+        const count = document.getElementById('diffSelect').value;
+        generateBoard(parseInt(count));
     };
-
 </script>
 </body>
 </html>
