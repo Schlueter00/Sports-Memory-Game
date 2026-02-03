@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Sports Sync - Robust Version</title>
+    <title>Pro Sports Sync - GitHub Optimized</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gun/nts.js"></script>
     <style>
         :root { --bg: #0f172a; --card-bg: #1e293b; --accent: #38bdf8; --text: #f8fafc; --match: #10b981; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 15px; }
-        header { background: var(--card-bg); padding: 15px; border-radius: 12px; width: 100%; max-width: 600px; text-align: center; margin-bottom: 15px; border: 1px solid #334155; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 15px; }
+        header { background: var(--card-bg); padding: 15px; border-radius: 12px; width: 100%; max-width: 550px; text-align: center; margin-bottom: 15px; border: 1px solid #334155; }
         .controls { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-        input, select { padding: 10px; border-radius: 6px; border: 1px solid var(--accent); background: #000; color: #fff; }
-        button { padding: 10px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid var(--accent); background: #000; color: #fff; }
+        button { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: all 0.2s; }
         #restartBtn { background: #ef4444; color: white; }
         #shareBtn { background: var(--match); color: white; }
         #syncBtn { background: #6366f1; color: white; }
-        button:hover { filter: brightness(1.2); transform: scale(1.02); }
+        button:active { transform: scale(0.95); }
         .host-only { display: none; }
         body.is-host .host-only { display: block; }
         .grid { display: grid; gap: 10px; width: 100%; max-width: 600px; margin-top: 15px; }
@@ -28,35 +27,33 @@
         .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.4s; transform-style: preserve-3d; }
         .card.flipped .card-inner { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; }
-        .card-front { background: var(--card-bg); font-size: 1.5rem; color: var(--accent); }
+        .card-front { background: var(--card-bg); font-size: 1.5rem; color: var(--accent); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .card-back { background: white; transform: rotateY(180deg); padding: 5px; }
         .card-back img { width: 90%; height: 90%; object-fit: contain; }
-        .card.matched { cursor: default; opacity: 0.5; pointer-events: none; }
-        #status { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; font-weight: bold; }
+        .card.matched { cursor: default; opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+        #status { font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.2); }
     </style>
 </head>
 <body id="mainBody">
 
 <header>
-    <h2 style="margin:0">🏆 <span id="roleTitle">Peer</span> View</h2>
-    <div id="status">📡 Establishing Connection...</div>
+    <h2 style="margin:0">🏅 <span id="roleTitle">Peer</span></h2>
+    <div id="status">📡 Connecting to P2P Mesh...</div>
     <div class="controls">
         <div class="row">
-            <input type="text" id="playerName" placeholder="Your Name">
+            <input type="text" id="playerName" placeholder="Player Name">
             <div class="host-only">
                 <select id="diffSelect">
-                    <option value="8">Easy (4x4)</option>
-                    <option value="12">Medium (6x4)</option>
-                    <option value="18">Hard (6x6)</option>
+                    <option value="8">Easy</option>
+                    <option value="12">Medium</option>
+                    <option value="18">Hard</option>
                 </select>
             </div>
         </div>
         <div class="row">
-            <button id="shareBtn">Copy Invite</button>
-            <button id="syncBtn">Force Sync</button>
-            <div class="host-only">
-                <button id="restartBtn">Start Game</button>
-            </div>
+            <button id="shareBtn">Copy Link</button>
+            <button id="syncBtn">Refresh Sync</button>
+            <div class="host-only"><button id="restartBtn">Start Match</button></div>
         </div>
     </div>
 </header>
@@ -64,12 +61,12 @@
 <main id="gameBoard" class="grid"></main>
 
 <script>
-    // 1. Setup multi-relay peers for high reliability
+    // USES SECURE RELAYS ONLY (Required for GitHub Pages/HTTPS)
     const gun = Gun({
         peers: [
             'https://gun-manhattan.herokuapp.com/gun',
             'https://peer.wall.org/gun',
-            'https://gundb-relay.herokapp.com/gun'
+            'https://gun-server.herokuapp.com/gun'
         ]
     });
 
@@ -77,32 +74,34 @@
     const isHost = !urlParams.get('session');
     let sessionId = urlParams.get('session') || Math.random().toString(36).substring(7);
     
+    // Auto-update URL for host
     if (isHost) {
-        window.history.replaceState({}, '', `?session=${sessionId}`);
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?session=' + sessionId;
+        window.history.replaceState({path:newUrl}, '', newUrl);
         document.body.classList.add('is-host');
-        document.getElementById('roleTitle').innerText = "Host";
+        document.getElementById('roleTitle').innerText = "Match Host";
     }
 
-    const room = gun.get('sports-memory-final-' + sessionId);
+    // UNIQUE DATA PATH
+    const room = gun.get('nfl-mlb-nba-v5').get(sessionId);
     const boardEl = document.getElementById('gameBoard');
     let localCards = [];
 
-    // 2. Data Listener (The Heart of Sync)
-    room.get('board').on((data) => {
+    // DATA LISTENER
+    room.get('board_data').on((data) => {
         if (data) {
             localCards = JSON.parse(data);
             updateGridClass(localCards.length);
             render();
-            document.getElementById('status').innerText = "✅ ONLINE & SYNCED";
+            document.getElementById('status').innerText = "✅ ACTIVE SYNC (" + localCards.filter(c=>c.matched).length + " matched)";
             document.getElementById('status').style.color = "#10b981";
         }
     });
 
-    // 3. Teams List
     const allTeams = [
-        {id: "ari", l:"nfl"}, {id: "atl", l:"nfl"}, {id: "bal", l:"nfl"}, {id: "buf", l:"nfl"}, {id: "car", l:"nfl"}, {id: "chi", l:"nfl"}, {id: "cin", l:"nfl"}, {id: "cle", l:"nfl"},
-        {id: "lal", l:"nba"}, {id: "bos", l:"nba"}, {id: "chi", l:"nba"}, {id: "gs", l:"nba"}, {id: "mia", l:"nba"}, {id: "ny", l:"nba"}, {id: "phi", l:"nba"}, {id: "phx", l:"nba"},
-        {id: "nyy", l:"mlb"}, {id: "lad", l:"mlb"}, {id: "bos", l:"mlb"}, {id: "chc", l:"mlb"}, {id: "sf", l:"mlb"}, {id: "stl", l:"mlb"}, {id: "tex", l:"mlb"}, {id: "tor", l:"mlb"}
+        {id: "ari", l:"nfl"}, {id: "atl", l:"nfl"}, {id: "bal", l:"nfl"}, {id: "buf", l:"nfl"}, {id: "chi", l:"nfl"}, {id: "dal", l:"nfl"}, {id: "kc", l:"nfl"}, {id: "phi", l:"nfl"},
+        {id: "lal", l:"nba"}, {id: "bos", l:"nba"}, {id: "gs", l:"nba"}, {id: "ny", l:"nba"}, {id: "phi", l:"nba"}, {id: "phx", l:"nba"}, {id: "mil", l:"nba"}, {id: "mia", l:"nba"},
+        {id: "nyy", l:"mlb"}, {id: "lad", l:"mlb"}, {id: "bos", l:"mlb"}, {id: "chc", l:"mlb"}, {id: "sf", l:"mlb"}, {id: "atl", l:"mlb"}, {id: "hou", l:"mlb"}, {id: "tor", l:"mlb"}
     ];
 
     function generateBoard(count) {
@@ -110,7 +109,7 @@
         const board = [...shuffled, ...shuffled]
             .sort(() => 0.5 - Math.random())
             .map((t, i) => ({ ...t, index: i, flipped: false, matched: false }));
-        room.get('board').put(JSON.stringify(board));
+        room.get('board_data').put(JSON.stringify(board));
     }
 
     function render() {
@@ -137,14 +136,15 @@
         if (flipped.length === 2) {
             const [c1, c2] = flipped;
             if (c1.id === c2.id && c1.l === c2.l) {
-                setTimeout(() => { localCards[c1.index].matched = true; localCards[c2.index].matched = true; sync(); }, 400);
+                setTimeout(() => { localCards[c1.index].matched = true; localCards[c2.index].matched = true; sync(); }, 500);
             } else {
                 setTimeout(() => { localCards[c1.index].flipped = false; localCards[c2.index].flipped = false; sync(); }, 1200);
             }
         }
     }
 
-    function sync() { room.get('board').put(JSON.stringify(localCards)); }
+    function sync() { room.get('board_data').put(JSON.stringify(localCards)); }
+
     function updateGridClass(size) {
         boardEl.className = "grid";
         if (size <= 16) boardEl.classList.add('easy');
@@ -152,15 +152,19 @@
         else boardEl.classList.add('hard');
     }
 
-    // UI Buttons
     document.getElementById('shareBtn').onclick = () => {
         navigator.clipboard.writeText(window.location.href);
-        alert("Invite Link Copied!");
+        alert("Link Copied! Ensure your friend opens this EXACT URL.");
     };
+
     document.getElementById('syncBtn').onclick = () => {
-        document.getElementById('status').innerText = "🔄 Re-syncing...";
-        room.get('board').once((data) => { if(data) { localCards = JSON.parse(data); render(); } });
+        document.getElementById('status').innerText = "🔄 Pulling latest data...";
+        room.get('board_data').once((data) => {
+            if(data) { localCards = JSON.parse(data); render(); }
+            else { alert("No board found. Wait for host to start."); }
+        });
     };
+
     if (isHost) {
         document.getElementById('restartBtn').onclick = () => {
             generateBoard(parseInt(document.getElementById('diffSelect').value));
