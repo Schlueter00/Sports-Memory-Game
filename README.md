@@ -1,68 +1,59 @@
-This README provides a comprehensive overview of the Sports Memory Game application, its features, and how to deploy it.
-
 🏆 Sports Memory Game
-A real-time, multiplayer memory matching game featuring all teams from the NFL, NBA, and MLB. Built with a focus on mobile responsiveness and seamless peer-to-peer connectivity, this game allows sports fans to compete across the hall or across the country without a central server.
+A real-time, multiplayer memory matching game built for sports fans. Test your knowledge of NFL, NBA, MLB, and NHL logos while competing against friends in a "winner-stays-on" format.
 
-✨ Key Features
-Real-Time Multiplayer: Powered by PeerJS for serverless, low-latency peer-to-peer gameplay.
+🚀 Features
+Real-Time Multiplayer: Powered by PeerJS for seamless, serverless connectivity between players.
 
-Comprehensive Rosters: Includes all 32 NFL teams, 30 NBA teams, and 30 MLB teams with high-quality SVG logos.
+Four Major Leagues: Choose between NFL, NBA, MLB, NHL, or mix them all for a greater challenge.
 
-Host Controls:
+Live Turn Tracking: A high-visibility red popup notifies players exactly when it is their turn.
 
-Dynamic Grid Size: Choose between 16, 24, or 32 cards.
+Season Leaderboard: Keeps track of "Season Wins" across multiple rounds to crown the ultimate champion.
 
-League Selection: Filter games by specific leagues or play a "Super Bowl" style mix of all three.
+Dynamic Board Sizes: Host can choose between 16, 24, or 32-card grids.
 
-Leaderboard Management: Track "Season Wins" across multiple rounds and reset them at any time.
+Responsive Design: Optimized for both desktop and mobile play with touch-friendly cards.
 
-Room Management: Generate new Game IDs or reshuffle cards instantly.
+🕹️ How to Play
+1. Starting a Game (The Host)
+Enter your name and click "Set ID" if you want a custom room name (e.g., SuperBowlParty).
 
-Smart Game Logic: * Detects draws and prompts a replay without awarding season points.
+Select your preferred League and Board Size.
 
-Synchronized UI: When the host starts a new round, the win popup closes for all connected players.
+Click "Copy Invite Link" and send it to your friends.
 
-Responsive Design: Optimized for mobile "Bingo-style" vertical play and desktop browsers.
+Once everyone has joined, click "Generate Card" to begin!
 
-🚀 How to Play
-Start a Game: Open the HTML file in any modern browser. You are automatically assigned as the Host.
+2. Joining a Game
+Click the invite link provided by the host.
 
-Invite Friends: Click the "Copy Invite Link 🔗" button and send the URL to your friends.
+Enter your name.
 
-Joining: When players click your link, they will automatically connect to your session.
+Wait for the host to start the round.
 
-Gameplay: Players take turns flipping two cards. If they match a team logo, they earn a point and go again. If not, the turn passes to the next player.
+3. Gameplay Rules
+On your turn, flip two cards.
 
-Winning: The player with the most pairs at the end wins the round and earns a Season Win on the leaderboard.
+Match: If the logos match, you earn a point and keep your turn.
 
-🛠️ Technical Stack
-Frontend: HTML5, CSS3 (Flexbox/Grid), Vanilla JavaScript.
+Miss: If they don't match, the turn passes to the next player.
+
+The Winner: The player with the most pairs at the end of the round wins.
+
+Next Round: The winner of the previous round gets the advantage of going first in the next game!
+
+🛠️ Technical Details
+Frontend: HTML5, CSS3 (Flexbox/Grid), and Vanilla JavaScript.
 
 Networking: PeerJS (WebRTC) for peer-to-peer data synchronization.
 
-Visual Effects: Canvas-Confetti for victory celebrations.
+Effects: Canvas-Confetti for victory celebrations.
 
-Icons: Official team logos sourced via Wikimedia Commons SVG repository.
+📁 Installation & Setup
+No installation is required. This is a client-side application.
 
-📂 Installation & Deployment
-Since this is a client-side application, no backend installation is required.
+Save the code as index.html.
 
-Download the index.html file.
+Open the file in any modern web browser (Chrome, Safari, Firefox).
 
-Host it on any static web host (GitHub Pages, Netlify, Vercel) or simply run it locally.
-
-Note: For PeerJS to work across different networks, HTTPS is highly recommended.
-
-⚙️ Configuration
-The game handles logic through a central gameState object managed by the Host:
-
-JavaScript
-let gameState = {
-    cards: [],        // Array of card objects (id, image, status)
-    players: {},      // Map of PeerIDs to player profiles (names, scores, totalWins)
-    playerOrder: [],  // Turn sequence
-    turnIndex: 0,     // Current active player
-    isProcessing: false // Prevents clicking during card-flip animations
-};
-⚖️ License
-This project is for educational and recreational use. Team logos are trademarks of their respective leagues (NFL, NBA, MLB).
+Ensure you have an internet connection to load the PeerJS library and team logos.
