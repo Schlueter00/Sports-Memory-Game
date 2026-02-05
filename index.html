@@ -29,11 +29,48 @@
 
         .app-section { width: var(--app-width); max-width: var(--max-app-width); background: var(--card-bg); border-radius: 8px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px; border-top: 6px solid var(--primary-color); }
 
-        #player-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
-        .player-entry { background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px; border: 1px solid var(--border-ui); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
+        #player-list { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            margin: 15px 0; 
+            justify-content: center; 
+        }
+        
+        .player-entry { 
+            background: rgba(0,0,0,0.03); 
+            padding: 10px; 
+            border-radius: 6px; 
+            border: 1px solid var(--border-ui); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-align: center; 
+            min-width: 130px;
+            flex-grow: 0;
+        }
         .player-entry.active-turn { border: 2px solid #f39c12; background: #fffdf0; }
-        .score-pill { background: var(--primary-color); color: white; padding: 1px 6px; border-radius: 10px; font-weight: 900; font-size: 0.65rem; margin-top: 4px; }
-        .win-tally { font-size: 0.6rem; color: #e67e22; font-weight: bold; margin-top: 2px; }
+        .score-pill { background: var(--primary-color); color: white; padding: 2px 8px; border-radius: 10px; font-weight: 900; font-size: 0.7rem; margin-top: 5px; }
+        .win-tally { font-size: 0.65rem; color: #e67e22; font-weight: bold; margin-top: 4px; }
+
+        #turn-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(231, 76, 60, 0.95);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            z-index: 10001;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            border: 2px solid white;
+        }
 
         .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; background: var(--border-ui); padding: 6px; border-radius: 4px; }
         .memory-card { aspect-ratio: 1 / 1.1; position: relative; cursor: pointer; transform-style: preserve-3d; transition: transform 0.4s; }
@@ -53,9 +90,13 @@
 
         #win-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; background: var(--primary-color); color: var(--secondary-color); padding: 20px; border-radius: 15px; text-align: center; z-index: 10000; border: 4px solid var(--secondary-color); }
 
-        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .controls-stack { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 15px; width: 100%; }
+        .controls-row { display: flex; gap: 8px; width: 100%; max-width: 400px; justify-content: center; }
+        .controls-row button { flex: 1; }
+        .btn-full { width: 100%; max-width: 400px; }
+
         select, input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-ui); font-size: 0.8rem; }
-        button { padding: 10px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; text-transform: uppercase; color: white; font-size: 0.65rem; }
+        button { padding: 10px; cursor: pointer; font-weight: bold; border-radius: 8px; border: none; text-transform: uppercase; color: white; font-size: 0.7rem; }
         .btn-blue { background: #3498db; }
         .btn-green { background: #27ae60; }
         .btn-orange { background: #f39c12; }
@@ -67,6 +108,8 @@
 
     <h1 class="main-header">Sports Memory Game</h1>
 
+    <div id="turn-popup"></div>
+
     <div id="win-modal">
         <h1 id="win-title" style="font-size: 1.8rem; margin: 0;">GAME OVER!</h1>
         <p id="winner-text" style="font-size: 1rem; margin: 10px 0;"></p>
@@ -75,17 +118,35 @@
     </div>
 
     <section class="app-section">
+        <label style="font-size:0.6rem; font-weight:bold;">YOUR NAME:</label>
         <input type="text" id="playerName" value="Player" onchange="updateMyName()" placeholder="Your Name">
         
+        <div id="join-ui" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+            <label style="font-size:0.6rem; font-weight:bold;">JOIN A GAME:</label>
+            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                <input type="text" id="join-id-input" placeholder="Enter Game ID">
+                <button class="btn-green" onclick="manualJoin()">Join ➔</button>
+            </div>
+        </div>
+
         <div id="host-ui" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+            <div style="margin-bottom:10px;">
+                <label style="font-size:0.6rem; font-weight:bold;">CUSTOM GAME ID (Host):</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="custom-game-id" placeholder="e.g. MyGame123">
+                    <button class="btn-orange" onclick="setCustomGameID()">Set ID</button>
+                </div>
+            </div>
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                 <div>
                     <label style="font-size:0.6rem; font-weight:bold;">LEAGUE:</label>
                     <select id="league-select" onchange="hostReset()">
                         <option value="all">All Sports</option>
-                        <option value="nfl">National Football League (NFL)</option>
-                        <option value="nba">National Basketball Association (NBA)</option>
-                        <option value="mlb">Major League Baseball(MLB)</option>
+                        <option value="nfl">NFL</option>
+                        <option value="nba">NBA</option>
+                        <option value="mlb">MLB</option>
+                        <option value="nhl">NHL</option>
                     </select>
                 </div>
                 <div>
@@ -98,11 +159,12 @@
                 </div>
             </div>
             
-            <div class="controls-grid">
-                <button class="btn-blue" onclick="copyInvite()" style="grid-column: span 2;">Copy Invite Link 🔗</button>
-                <button class="btn-green" onclick="hostReset()">Generate New Card 🔄</button>
-                <button class="btn-orange" onclick="createNewGameId()">New Game ID 🆔</button>
-                <button class="btn-red" onclick="resetLeaderboard()" style="grid-column: span 2;">Reset Leaderboard 🏆</button>
+            <div class="controls-stack">
+                <button class="btn-blue btn-full" onclick="copyInvite()">Copy Invite Link 🔗</button>
+                <div class="controls-row">
+                    <button class="btn-green" onclick="hostReset()">Generate Card 🔄</button>
+                    <button class="btn-red" onclick="resetLeaderboard()">Reset 🏆</button>
+                </div>
             </div>
         </div>
 
@@ -169,50 +231,126 @@
 			{ n: "Blue Jays", i: "https://upload.wikimedia.org/wikipedia/en/c/cc/Toronto_Blue_Jay_Primary_Logo.svg" }, { n: "Nationals", i: "https://upload.wikimedia.org/wikipedia/commons/a/a3/Washington_Nationals_logo.svg" }
         ];
 
-        let peer, connections = {}, isHost = false, gameID = null;
+        const nhlTeams = [
+            { n: "Ducks", i: "https://upload.wikimedia.org/wikipedia/en/7/72/Anaheim_Ducks_logo.svg" }, { n: "Bruins", i: "https://upload.wikimedia.org/wikipedia/en/1/12/Boston_Bruins.svg" },
+            { n: "Sabres", i: "https://upload.wikimedia.org/wikipedia/en/9/9e/Buffalo_Sabres_Logo.svg" }, { n: "Flames", i: "https://upload.wikimedia.org/wikipedia/en/6/61/Calgary_Flames_logo.svg" },
+            { n: "Hurricanes", i: "https://upload.wikimedia.org/wikipedia/en/3/32/Carolina_Hurricanes_logo.svg" }, { n: "Blackhawks", i: "https://upload.wikimedia.org/wikipedia/en/2/29/Chicago_Blackhawks_logo.svg" },
+            { n: "Avalanche", i: "https://upload.wikimedia.org/wikipedia/en/4/45/Colorado_Avalanche_logo.svg" }, { n: "Blue Jackets", i: "https://upload.wikimedia.org/wikipedia/en/5/5d/Columbus_Blue_Jackets_logo.svg" },
+            { n: "Stars", i: "https://upload.wikimedia.org/wikipedia/en/2/2a/Dallas_Stars_logo.svg" }, { n: "Red Wings", i: "https://upload.wikimedia.org/wikipedia/en/e/e0/Detroit_Red_Wings_logo.svg" },
+            { n: "Oilers", i: "https://upload.wikimedia.org/wikipedia/en/4/4d/Edmonton_Oilers_logo.svg" }, { n: "Panthers", i: "https://upload.wikimedia.org/wikipedia/en/4/43/Florida_Panthers_2016_logo.svg" },
+            { n: "Kings", i: "https://upload.wikimedia.org/wikipedia/en/c/ca/Los_Angeles_Kings_2024_logo.svg" }, { n: "Wild", i: "https://upload.wikimedia.org/wikipedia/en/1/1b/Minnesota_Wild_logo.svg" },
+            { n: "Canadiens", i: "https://upload.wikimedia.org/wikipedia/commons/6/69/Montreal_Canadiens.svg" }, { n: "Predators", i: "https://upload.wikimedia.org/wikipedia/en/9/9c/Nashville_Predators_Logo_2011.svg" },
+            { n: "Devils", i: "https://upload.wikimedia.org/wikipedia/en/9/9f/New_Jersey_Devils_logo.svg" }, { n: "Islanders", i: "https://upload.wikimedia.org/wikipedia/en/4/42/New_York_Islanders_logo.svg" },
+            { n: "Rangers", i: "https://upload.wikimedia.org/wikipedia/commons/a/ae/New_York_Rangers.svg" }, { n: "Senators", i: "https://upload.wikimedia.org/wikipedia/en/d/db/Ottawa_Senators.svg" },
+            { n: "Flyers", i: "https://upload.wikimedia.org/wikipedia/en/d/dc/Philadelphia_Flyers.svg" }, { n: "Penguins", i: "https://upload.wikimedia.org/wikipedia/en/c/c0/Pittsburgh_Penguins_logo.svg" },
+            { n: "Sharks", i: "https://upload.wikimedia.org/wikipedia/en/3/37/San_Jose_Sharks_logo.svg" }, { n: "Kraken", i: "https://upload.wikimedia.org/wikipedia/en/4/48/Seattle_Kraken_official_logo.svg" },
+            { n: "Blues", i: "https://upload.wikimedia.org/wikipedia/en/e/ed/St._Louis_Blues_logo.svg" }, { n: "Lightning", i: "https://upload.wikimedia.org/wikipedia/en/2/2f/Tampa_Bay_Lightning_Logo_2011.svg" },
+            { n: "Maple Leafs", i: "https://upload.wikimedia.org/wikipedia/en/b/b6/Toronto_Maple_Leafs_2016_logo.svg" }, { n: "Utah", i: "https://upload.wikimedia.org/wikipedia/en/a/ad/Utah_Hockey_Club_logo.svg" },
+            { n: "Canucks", i: "https://upload.wikimedia.org/wikipedia/en/3/3a/Vancouver_Canucks_logo.svg" }, { n: "Golden Knights", i: "https://upload.wikimedia.org/wikipedia/en/a/ac/Vegas_Golden_Knights_logo.svg" },
+            { n: "Capitals", i: "https://upload.wikimedia.org/wikipedia/en/2/2d/Washington_Capitals.svg" }, { n: "Jets", i: "https://upload.wikimedia.org/wikipedia/en/9/93/Winnipeg_Jets_Logo_2011.svg" }
+        ];
+
+        let peer, connections = {}, isHost = false, gameID = null, lastTurnId = null;
         let gameState = { cards: [], players: {}, playerOrder: [], turnIndex: 0, flippedIndices: [], isProcessing: false };
 
-        window.onload = () => { const urlParams = new URLSearchParams(window.location.search); initPeer(urlParams.get('game')); };
+        window.onload = () => { 
+            const urlParams = new URLSearchParams(window.location.search); 
+            const joinId = urlParams.get('game');
+            if (joinId) { initPeer(joinId); } else { initPeer(); }
+        };
 
-        function initPeer(id) {
+        function initPeer(id = null) {
             if (peer) peer.destroy();
             peer = new Peer();
-            peer.on('open', (myId) => {
-                gameID = id || myId;
-                if (!id) {
-                    isHost = true;
+
+            peer.on('open', (assignedId) => {
+                if (id) {
+                    gameID = id; isHost = false;
+                    document.getElementById('host-ui').style.display = 'none';
+                    document.getElementById('join-ui').style.display = 'none';
+                    connectToHost(id);
+                } else {
+                    gameID = assignedId; isHost = true;
                     document.getElementById('host-ui').style.display = 'block';
+                    document.getElementById('join-ui').style.display = 'block';
+                    document.getElementById('custom-game-id').value = assignedId;
                     if (!gameState.players[peer.id]) {
                         gameState.players[peer.id] = { name: document.getElementById('playerName').value, score: 0, totalWins: 0 };
                         gameState.playerOrder = [peer.id];
                     }
                     setupNewGame();
-                } else { connectToHost(id); }
+                }
+            });
+            peer.on('error', (err) => {
+                if(err.type === 'peer-unavailable') alert("Game not found.");
+                else if(err.type === 'unavailable-id') alert("ID taken.");
+                console.error(err);
             });
             peer.on('connection', setupConn);
+        }
+
+        function manualJoin() {
+            const idToJoin = document.getElementById('join-id-input').value.trim();
+            if(!idToJoin) return alert("Enter Game ID");
+            initPeer(idToJoin);
+        }
+
+        function setCustomGameID() {
+            const newID = document.getElementById('custom-game-id').value.trim();
+            if (!newID || !isHost) return;
+            if (confirm("Changing ID will reset the game. Continue?")) {
+                if (peer) peer.destroy();
+                peer = new Peer(newID);
+                peer.on('open', (assignedId) => {
+                    gameID = assignedId; connections = {};
+                    gameState.players = { [peer.id]: { name: document.getElementById('playerName').value, score: 0, totalWins: 0 } };
+                    gameState.playerOrder = [peer.id];
+                    setupNewGame();
+                });
+                peer.on('error', (err) => { if(err.type === 'unavailable-id') { alert("ID taken."); initPeer(); } });
+                peer.on('connection', setupConn);
+            }
         }
 
         function setupConn(conn) {
             conn.on('open', () => {
                 connections[conn.peer] = conn;
                 if (isHost) {
+                    document.getElementById('join-ui').style.display = 'none';
                     if (!gameState.players[conn.peer]) {
                         gameState.players[conn.peer] = { name: "Player", score: 0, totalWins: 0 };
                         gameState.playerOrder.push(conn.peer);
                     }
                     broadcastState();
+                } else {
+                    conn.send({ type: 'name_update', name: document.getElementById('playerName').value });
                 }
             });
+
             conn.on('data', (data) => {
                 if (data.type === 'state_update') {
+                    const oldTurnId = lastTurnId;
                     gameState = data.state;
+                    document.getElementById('join-ui').style.display = 'none'; 
                     renderBoard(); updatePlayerList();
+                    
+                    const newTurnId = gameState.playerOrder[gameState.turnIndex];
+                    if (newTurnId !== oldTurnId || data.forceTurnPopup) {
+                        showTurnPopup(gameState.players[newTurnId].name);
+                        lastTurnId = newTurnId;
+                    }
+
                     if (data.showWin) triggerWinPopup(data.winnerName, data.isDraw);
                     if (data.hideWin) document.getElementById('win-modal').style.display = 'none';
                 }
                 if (isHost) {
                     if (data.type === 'flip') handleFlip(data.index, conn.peer);
-                    if (data.type === 'name_update') { gameState.players[conn.peer].name = data.name; broadcastState(); }
+                    if (data.type === 'name_update') { 
+                        if (gameState.players[conn.peer]) {
+                            gameState.players[conn.peer].name = data.name; 
+                            broadcastState(); 
+                        }
+                    }
                 }
             });
         }
@@ -222,7 +360,13 @@
         function setupNewGame() {
             const league = document.getElementById('league-select').value;
             const count = parseInt(document.getElementById('size-select').value);
-            let pool = (league === 'nfl') ? nflTeams : (league === 'nba') ? nbaTeams : (league === 'mlb') ? mlbTeams : [...nflTeams, ...nbaTeams, ...mlbTeams];
+            
+            let pool;
+            if (league === 'nfl') pool = nflTeams;
+            else if (league === 'nba') pool = nbaTeams;
+            else if (league === 'mlb') pool = mlbTeams;
+            else if (league === 'nhl') pool = nhlTeams;
+            else pool = [...nflTeams, ...nbaTeams, ...mlbTeams, ...nhlTeams];
 
             let picked = shuffle([...pool]).slice(0, count / 2);
             let gameIcons = shuffle([...picked, ...picked]);
@@ -231,7 +375,17 @@
             gameState.isProcessing = false;
             Object.keys(gameState.players).forEach(id => gameState.players[id].score = 0);
             
-            broadcastState({ hideWin: true });
+            const starterId = gameState.playerOrder[gameState.turnIndex];
+            showTurnPopup(gameState.players[starterId].name);
+            
+            broadcastState({ hideWin: true, forceTurnPopup: true });
+        }
+
+        function showTurnPopup(name) {
+            const popup = document.getElementById('turn-popup');
+            popup.innerText = `${name}'s Turn`;
+            popup.style.display = 'block';
+            setTimeout(() => { popup.style.display = 'none'; }, 2000);
         }
 
         function handleFlip(index, peerId) {
@@ -254,7 +408,6 @@
                         matcher.score += 1;
                         gameState.flippedIndices = [];
                         gameState.isProcessing = false;
-                        
                         if (gameState.cards.every(c => c.matched)) {
                             const sorted = Object.values(gameState.players).sort((a,b) => b.score - a.score);
                             const isDraw = sorted.length > 1 && sorted[0].score === sorted[1].score;
@@ -282,6 +435,13 @@
             const payload = { type: 'state_update', state: gameState, ...extra };
             Object.values(connections).forEach(c => { if (c.open) c.send(payload); });
             renderBoard(); updatePlayerList();
+            
+            const currentTurnId = gameState.playerOrder[gameState.turnIndex];
+            if (currentTurnId !== lastTurnId && !extra.forceTurnPopup) {
+                showTurnPopup(gameState.players[currentTurnId].name);
+                lastTurnId = currentTurnId;
+            }
+
             if (extra.showWin) triggerWinPopup(extra.winnerName, extra.isDraw);
             if (extra.hideWin) document.getElementById('win-modal').style.display = 'none';
         }
@@ -295,7 +455,7 @@
                 div.innerHTML = `<div class="card-face card-front"></div><div class="card-face card-back"><div class="player-label">${card.matchedBy}</div><img src="${card.i}"><div class="team-label">${card.n}</div></div>`;
                 div.onclick = () => {
                     if (isHost) handleFlip(index, peer.id);
-                    else { const hostConn = Object.values(connections)[0]; if (hostConn) hostConn.send({ type: 'flip', index: index }); }
+                    else { const hostConn = Object.values(connections)[0]; if (hostConn && hostConn.open) hostConn.send({ type: 'flip', index: index }); }
                 };
                 board.appendChild(div);
             });
@@ -307,9 +467,9 @@
             list.innerHTML = gameState.playerOrder.map(id => {
                 const p = gameState.players[id];
                 return `<div class="player-entry ${id === activeId ? 'active-turn' : ''}">
-                    <strong style="font-size:0.7rem;">${p.name}</strong>
-                    <span class="score-pill">${p.score} Pairs</span>
-                    <span class="win-tally">Season Wins: ${p.totalWins || 0}</span>
+                    <strong style="font-size:0.75rem;">${p ? p.name : 'Joining...'}</strong>
+                    <span class="score-pill">${p ? p.score : 0} Pairs</span>
+                    <span class="win-tally">Season Wins: ${p ? (p.totalWins || 0) : 0}</span>
                 </div>`;
             }).join('');
         }
@@ -323,17 +483,18 @@
             document.getElementById('host-reset-btn').style.display = isHost ? 'inline-block' : 'none';
         }
 
-        function createNewGameId() { if(confirm("This will disconnect current players. Generate new ID?")) { window.location.href = window.location.origin + window.location.pathname; } }
         function resetLeaderboard() { if(isHost && confirm("Clear all Season Wins?")) { Object.keys(gameState.players).forEach(id => gameState.players[id].totalWins = 0); broadcastState(); } }
         function hostReset() { if(isHost) setupNewGame(); }
         function updateMyName() {
             const name = document.getElementById('playerName').value;
             if (isHost) { gameState.players[peer.id].name = name; broadcastState(); }
-            else { const hostConn = Object.values(connections)[0]; if (hostConn) hostConn.send({ type: 'name_update', name }); }
+            else { const hostConn = Object.values(connections)[0]; if (hostConn && hostConn.open) hostConn.send({ type: 'name_update', name }); }
         }
-        function copyInvite() { const url = `${window.location.origin}${window.location.pathname}?game=${gameID}`; navigator.clipboard.writeText(url).then(() => alert("Link Copied!")); }
+        function copyInvite() { 
+            const url = `${window.location.origin}${window.location.pathname}?game=${gameID}`; 
+            navigator.clipboard.writeText(url).then(() => alert("Link Copied!")); 
+        }
         function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
     </script>
 </body>
 </html>
-
